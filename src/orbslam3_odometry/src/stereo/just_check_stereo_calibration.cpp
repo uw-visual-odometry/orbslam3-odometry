@@ -29,7 +29,9 @@ public:
 
         if (isTakingPicture) {
             if (!directory_exists(path) || !directory_exists(pathLeft) || !directory_exists(pathRight) ) {
-                RCLCPP_ERROR(this->get_logger(), "Directory " + path + " oppure " + pathLeft +  " oppure " + pathRight +" Non essitono. Crearle: mkdir -p "+ pathLeft + " ; mkdir -p "+ pathRight);
+                // RCLCPP_ERROR(this->get_logger(), "Directory " << std::string(path) << " oppure " << std::string(pathLeft) <<  " oppure " 
+                //             << std::string(pathRight) << " Non essitono. Crearle: mkdir -p " 
+                //             << std::string(pathLeft) << " ; mkdir -p "<< std::string(pathRight));
                 exit(1);
             }
 
