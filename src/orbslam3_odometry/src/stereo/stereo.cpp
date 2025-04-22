@@ -8,7 +8,7 @@
 
 // If defined, it will pre-rectify images, before giving it in input to orbslam.
 // It should be enables for Basler and disabled for stereo-camera like Zed
-#define PRE_RECTIFY_IMAGES
+// #define PRE_RECTIFY_IMAGES
 
 // If defined, the pointcloud created by orbslam will be published
 //#define PUBLISH_POINT_CLOUD
@@ -24,8 +24,8 @@ void StereoSlamNode::loadParameters()
 {
     /* ***** DECLARING PARAMETERS ***** */
 
-    declare_parameter("topic_camera_left", "/camera/left_image");
-    declare_parameter("topic_camera_right", "/camera/right_image");
+    declare_parameter("topic_camera_left", "/left/image_raw");
+    declare_parameter("topic_camera_right", "/right/image_raw");
     declare_parameter("topic_orbslam_odometry", "/Odometry/orbSlamOdom");
     declare_parameter("topic_header_frame_id", "os_track");
     declare_parameter("topic_child_frame_id", "orbslam3");

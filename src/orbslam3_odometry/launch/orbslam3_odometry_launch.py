@@ -18,7 +18,15 @@ def generate_launch_description():
             name='orbslam3_odometry',
             executable='orbslam3_odometry',
             output = 'screen',
-            parameters=[config_node]
+            parameters=[config_node],
+            # For debug gdbserver localhost:3000
+            # prefix=['gdb -ex run --args'],
+            emulate_tty=True,
+            remappings=[
+                # Remap the default '/chatter' topic to '/conversation'
+                ('/camera/left_image', '/left/image_raw'),
+                ('/camera/right_image', '/right/image_raw'),
+            ]
         )
 
     ld.add_action(node)

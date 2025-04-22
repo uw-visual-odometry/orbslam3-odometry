@@ -8,7 +8,7 @@
 #define IMAGE_MSG_DEFINE_HPP
 
 //#define ImageMsg sensor_msgs::msg::Image
-#define ImageMsg sensor_msgs::msg::CompressedImage
+#define ImageMsg sensor_msgs::msg::Image
 
 #endif // IMAGE_MSG_DEFINE_HPP
 

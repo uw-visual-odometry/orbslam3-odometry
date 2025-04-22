@@ -38,8 +38,8 @@ Stereo.T_c1_c2: !!opencv-matrix
          0.359094008788, -0.000655972370, 0.933301163909, -18.014024932328,
          0.000000000000, 0.000000000000, 0.000000000000, 1.000000000000]
 
+# Distance in meters of the two cameras
 Stereo.b: 0.093
-
 
 # Camera frames per second 
 Camera.fps: 20
@@ -49,12 +49,12 @@ Camera.RGB: 0
 
 # Close/Far threshold. Baseline times.
 Stereo.ThDepth: 50.0
-
-#--------------------------------------------------------------------------------------------
-# ORB Parameters
-#--------------------------------------------------------------------------------------------
 # ORB Extractor: Number of features per image
 ORBextractor.nFeatures: 4000
+
+#--------------------------------------------------------------------------------------------
+# The changing of the following parameters should not infect the resul too much
+#--------------------------------------------------------------------------------------------
 
 # ORB Extractor: Scale factor between levels in the scale pyramid 	
 ORBextractor.scaleFactor: 1.2

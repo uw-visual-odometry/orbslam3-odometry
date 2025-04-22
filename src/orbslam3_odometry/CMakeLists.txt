@@ -5,6 +5,7 @@ project(orbslam3_odometry)
 # set(ENV{PYTHONPATH} "/usr/lib/python2.7/dist-packages/")
 #set(ENV{PYTHONPATH} "/opt/ros/humble/lib/python3.8/site-packages/")
 
+set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # Default to C++14
