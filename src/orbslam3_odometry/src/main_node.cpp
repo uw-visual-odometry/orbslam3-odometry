@@ -10,7 +10,7 @@
 #include "System.h"
 #include <signal.h>
 
-#define DEBUG false
+#define DEBUG true
 
 void handleSignal(int signal)
 {

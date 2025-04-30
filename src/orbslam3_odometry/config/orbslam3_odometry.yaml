@@ -35,26 +35,30 @@
     #   cutting_rect = cv::Rect(cutting_x, cutting_y, cutting_width, cutting_height);
     #   new_image = old_image(cutting_rect);
     # if cutting_x is -1, the images will not be cropped.
-    cutting_x: -1
-    cutting_y: 500
-    cutting_width: 1355
-    cutting_height: 1002
+    cutting_x: 0
+    cutting_y: 0
+    cutting_width: 1440  #752 
+    cutting_height: 1080 #480
 
     # Visualizer of map created by ORBSLAM3 and images passed with ROS2. 
     #   false to disable the visualizer
     #   true to enable it
-    pangolin_visualization: false
+    pangolin_visualization: true
 
     # Full file path to vocabulary of ORB_SLAM3 
     path_vocabulary: /home/sysop/ORB-SLAM2/Dev/orbslam3-odometry/src/orbslam3_odometry/config/ORBvoc.txt
 
     # Full file path to yaml settings (for ORB_SLAM3)
-    path_yaml_settings: /home/sysop/ORB-SLAM2/Dev/orbslam3-odometry/src/orbslam3_odometry/config/zed2-stereo.yaml
+    path_yaml_settings: /home/sysop/ORB-SLAM2/Dev/orbslam3-odometry/src/orbslam3_odometry/config/our.yaml
+    # /home/sysop/ORB-SLAM2/Dev/orbslam3-odometry/src/orbslam3_odometry/config/our.yaml
+    #/home/sysop/ORB-SLAM2/Dev/orbslam3-odometry/src/orbslam3_odometry/config/EuRoC.yaml
+
     #/mnt/hgfs/cartella_condivisa/bag_26_05_24/basler_stereo_26_05_24_test.yaml
     
 
     # For stereo mode only. Doesn't make ORB_SLAM3 start (if true). It just shows the results of the stereo calibration with the params in the path_yaml_settings
     just_check_stereo_calibration: false
+ 
     
     # Parameter to help you to take pictures. 
     # true: take photo for calibration (press spacebar to take photo). Doesn't make ORB_SLAM3 start. 

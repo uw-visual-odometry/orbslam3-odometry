@@ -1,0 +1,94 @@
+%YAML:1.0
+
+#--------------------------------------------------------------------------------------------
+# Camera Parameters. Adjust them!
+#--------------------------------------------------------------------------------------------
+File.version: "1.0"
+#--------------------------------------------------------------------------------------------
+Camera.type: "PinHole"
+
+Camera.width: 1440
+Camera.height: 1080
+
+# Left camera
+Camera1.fx: 1061.90838
+Camera1.fy: 1065.08245
+Camera1.cx: 778.19368
+Camera1.cy: 553.85699
+ # Lens distortion coefficients
+Camera1.k1: -0.259389
+Camera1.k2: 0.203687
+Camera1.p1: 0.000660
+Camera1.p2: 0.003063
+Camera1.k3: -0.084775
+
+# Right camera
+Camera2.fx: 1060.22456
+Camera2.fy: 1063.51251
+Camera2.cx: 782.09116
+Camera2.cy: 582.52751
+ # Lens distortion coefficients
+Camera2.k1: -0.263264
+Camera2.k2: 0.215493
+Camera2.p1: -0.003977
+Camera2.p2: 0.000629
+Camera2.k3: -0.095231
+
+# Camera frames per second 
+Camera.fps: 10
+
+# Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
+Camera.RGB: 1
+
+# This haven't been filled with Aaron's calib parameters
+# This is the transformation from right camera to left camera (right camera pose w.r.t. left camera frame)
+# Related pose between two cameras
+Stereo.T_c1_c2: !!opencv-matrix
+  rows: 4
+  cols: 4
+  dt: f
+  data: [0.99943547901445629, 0.022444081414126321, 0.024999729930950534, -58.637816978114309,
+         -0.023748914705738311, 0.99830240855323193, 0.0531816709695684123, 2.6778224703043776,
+         -0.023763676850267961, -0.053745365254056446, 0.99827186846883753, 2.2160473652006489,
+         0.000000000000, 0.000000000000, 0.000000000000, 1.000000000000]
+
+#--------------------------------------------------------------------------------------------
+
+# Close/Far threshold. Baseline times.
+Stereo.ThDepth: 20.0
+
+# ORB Extractor: Number of features per image
+ORBextractor.nFeatures: 1200
+
+#--------------------------------------------------------------------------------------------
+# The changing of the following parameters should not infect the resul too much
+#--------------------------------------------------------------------------------------------
+
+# ORB Extractor: Scale factor between levels in the scale pyramid 	
+ORBextractor.scaleFactor: 1.2
+
+# ORB Extractor: Number of levels in the scale pyramid	
+ORBextractor.nLevels: 8
+
+# Optional parameter
+# System.thFarPoints
+# ORB Extractor: Fast threshold
+# Image is divided in a grid. At each cell FAST are extracted imposing a minimum response.
+# Firstly we impose iniThFAST. If no corners are detected we impose a lower value minThFAST
+# You can lower these values if your images have low contrast			
+ORBextractor.iniThFAST: 7
+ORBextractor.minThFAST: 6
+
+#--------------------------------------------------------------------------------------------
+# Viewer Parameters
+#--------------------------------------------------------------------------------------------
+Viewer.KeyFrameSize: 0.05
+Viewer.KeyFrameLineWidth: 1.0
+Viewer.GraphLineWidth: 0.9
+Viewer.PointSize: 2.0
+Viewer.CameraSize: 0.08
+Viewer.CameraLineWidth: 3.0
+Viewer.ViewpointX: 0.0
+Viewer.ViewpointY: -0.7
+Viewer.ViewpointZ: -3.5
+Viewer.ViewpointF: 500.0

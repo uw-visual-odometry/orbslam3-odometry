@@ -1,0 +1,14 @@
+Setup
+1. unzip (your orbslam3-odometry path)/orbslam3-odometry/src/orbslam3_odometry/config/ORBvoc.txt.tar.gz
+2. Add the above path to line 49 after "path_vocabulary:.." of (your orbslam3-odometry path)/orbslam3-odometry/src/orbslam3_odometry/config/orbslam3_odometry.yaml 
+
+Execution 
+1. source /opt/ros/humble/setup.bash
+2. source install/local_setup.bash
+3. ros2 launch vc_stereo_ros2 stereo.launch.xml
+
+Other infomation
+1. The calibration yaml file of our cameras are at (your orbslam3-odometry path)/orbslam3-odometry/src/orbslam3_odometry/config/our.yaml
+2. orbslam3_odometry.yaml (at (your orbslam3-odometry path)/orbslam3-odometry/src/orbslam3_odometry/config/orbslam3_odometry.yaml)
+    a. If wanting to just check calibration instead of launching slam, do "just_check_stereo_calibration: true" in line 60 
+    b. To close pangolin, do "pangolin_visualization: true"
