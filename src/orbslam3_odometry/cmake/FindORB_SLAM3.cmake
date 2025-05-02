@@ -5,7 +5,7 @@
 #
 # To help the search ORB_SLAM3_ROOT_DIR environment variable as the path to ORB_SLAM3 root folder
 #  e.g. `set( ORB_SLAM3_ROOT_DIR=~/ORB_SLAM3) `
-set(ORB_SLAM3_ROOT_DIR "~/ORB_SLAM3")
+set(ORB_SLAM3_ROOT_DIR "/home/aaron/workspace/aquarium/ORB_SLAM3")
 
 # message(${ORB_SLAM3_ROOT_DIR})
 # message(${ORB_SLAM3_ROOT_DIR}/include)
@@ -26,18 +26,16 @@ find_library(DBoW2_LIBRARY NAMES DBoW2
              PATHS ${ORB_SLAM3_ROOT_DIR}/Thirdparty/DBoW2/lib)
 
 # Find built-in g2o
-find_library(g2o_LIBRARY NAMES g2o
-             PATHS ${ORB_SLAM3_ROOT_DIR}/Thirdparty/g2o/lib)
-
-
+# find_library(g2o_LIBRARY NAMES g2o
+#              PATHS ${ORB_SLAM3_ROOT_DIR}/Thirdparty/g2o/lib)
 
 include(FindPackageHandleStandardArgs)
 # handle the QUIETLY and REQUIRED arguments and set ORB_SLAM3_FOUND to TRUE
 # if all listed variables are TRUE
 find_package_handle_standard_args(ORB_SLAM3  DEFAULT_MSG
-                                  ORB_SLAM3_LIBRARY ORB_SLAM3_INCLUDE_DIR DBoW2_INCLUDE_DIR DBoW2_LIBRARY g2o_LIBRARY)
+                                  ORB_SLAM3_LIBRARY ORB_SLAM3_INCLUDE_DIR DBoW2_INCLUDE_DIR DBoW2_LIBRARY)
 
 mark_as_advanced(ORB_SLAM3_INCLUDE_DIR ORB_SLAM3_LIBRARY )
 
-set(ORB_SLAM3_LIBRARIES ${ORB_SLAM3_LIBRARY} ${DBoW2_LIBRARY} ${g2o_LIBRARY})
+set(ORB_SLAM3_LIBRARIES ${ORB_SLAM3_LIBRARY} ${DBoW2_LIBRARY})
 set(ORB_SLAM3_INCLUDE_DIRS ${ORB_SLAM3_INCLUDE_DIR} ${DBoW2_INCLUDE_DIR})

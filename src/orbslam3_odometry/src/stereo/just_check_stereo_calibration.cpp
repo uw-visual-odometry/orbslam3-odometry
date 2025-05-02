@@ -1,7 +1,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/image.hpp"
 #include <opencv2/opencv.hpp>
-#include <cv_bridge/cv_bridge.h>
+#include <cv_bridge/cv_bridge.hpp>
 #include "orbslam3_odometry/utility.hpp"
 #include "stereo_rectification.h"
 #include "sensor_msgs/msg/compressed_image.hpp"
@@ -29,7 +29,10 @@ public:
 
         if (isTakingPicture) {
             if (!directory_exists(path) || !directory_exists(pathLeft) || !directory_exists(pathRight) ) {
-                RCLCPP_ERROR(this->get_logger(), "Directory " + path + " oppure " + pathLeft +  " oppure " + pathRight +" Non essitono. Crearle: mkdir -p "+ pathLeft + " ; mkdir -p "+ pathRight);
+                RCLCPP_ERROR_STREAM(this->get_logger(), "Directory " << path << " oppure " 
+                << pathLeft <<  " oppure " 
+                << pathRight <<" Non essitono. Crearle: mkdir -p "
+                << pathLeft << " ; mkdir -p " << pathRight);
                 exit(1);
             }
 
@@ -71,8 +74,8 @@ private:
         {
             //RCLCPP_INFO(this->get_logger(), "left" );
 
-            //left_image_ = cv_bridge::toCvShare(msg, "bgr8")->image;  // For image
-            left_image_ = cv_bridge::toCvCopy(msg, "bgr8")->image; // For compressed images
+            left_image_ = cv_bridge::toCvShare(msg, "bgr8")->image;  // For image
+            //left_image_ = cv_bridge::toCvCopy(msg, "bgr8")->image; // For compressed images
 
             // cv::imshow("Left NON Rectified", left_image_);
             // RCLCPP_INFO(this->get_logger(), "left ok" );
@@ -90,8 +93,8 @@ private:
         {
             //RCLCPP_INFO(this->get_logger(), "right" );
 
-            //right_image_ = cv_bridge::toCvShare(msg, "bgr8")->image;
-            right_image_ = cv_bridge::toCvCopy(msg, "bgr8")->image;
+            right_image_ = cv_bridge::toCvShare(msg, "bgr8")->image;
+            //right_image_ = cv_bridge::toCvCopy(msg, "bgr8")->image;
 
             // cv::imshow("Right NON Rectified", right_image_);
 
@@ -172,7 +175,7 @@ private:
                 { // Spacebar was pressed
                     // watch -n1 ls -Rl /home/formula-student/immagini
                     
-                    std::cout << "Salvo immagini. CONTROLLA CHE IL PATH " << path << " + SOTTOCARTELLE left E right ESISTANO" << std::endl;
+                    RCLCPP_INFO_STREAM(this->get_logger(),  "Salvo immagini. CONTROLLA CHE IL PATH " << path << " + SOTTOCARTELLE left E right ESISTANO");
                     cv::imwrite(pathLeft + std::to_string(cont_salva_immagini) + ".jpg", left_image_);
                     cv::imwrite(pathRight + std::to_string(cont_salva_immagini) + ".jpg", right_image_);
                     cont_salva_immagini++;
