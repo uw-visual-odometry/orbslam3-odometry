@@ -51,3 +51,19 @@ $ ros2 launch orbslam3_odometry orbslam3-odometry_launch.py
 To stop the node press `ctrl-c` and this save ORB_SLAM3 statistics txt in your folder. 
 
 
+
+# Aaron's notes
+
+The current `orbslam3_odometry.launch.py` is specialized for running the bagfiles from the 4/25/25 Aquarium testing.  In addition to `orbslam3_odometry` is runs two nodes for each of the left and right channels:
+
+* It runs the local script [camera_info_injector](orbslam_helpers/orbslam_helpers/camera_info_injector.py), which listens to an image stream, then republishes that image along with a time-synchronized `camera_info` topic.  This lets us make up for the fact we didn't record `camera_info` at the aquarium.
+
+** I don't know if this node needs to republish or if it can just publish a camera info every time an image is published.  ROS is picky about having images and camera info in sync.    If we don't need to republish the camera info message, things get simpler. **
+
+* It runs an `image_proc::RectifyNode` which rectifies the image using the camera info.
+
+orbslam is configured to take _rectified_ images.  If I read [this line](https://github.com/UZ-SLAMLab/ORB_SLAM3/blob/4452a3c4ab75b1cde34e5505a36ec3f9edcdc4c4/src/Settings.cc#L337) correctly, with Rectified images, `Stereo.T_c1_c` does not need to be set (it is effectively redundant with the stereo baseline) but not providing it didn't work TBD.
+
+`orbslam3_odometry.launch.py`, `orblsam3_odometry.yaml`, and `aquarium_nano_stereo.yaml` have all been "tuned" for our cameras and data.
+
+I was testing on the desktop under ROS Jazzy.

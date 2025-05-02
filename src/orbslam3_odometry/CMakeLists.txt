@@ -3,7 +3,7 @@ project(orbslam3_odometry)
 
 # You should set the PYTHONPATH to your own python site-packages path
 # set(ENV{PYTHONPATH} "/usr/lib/python2.7/dist-packages/")
-set(ENV{PYTHONPATH} "/opt/ros/foxy/lib/python3.8/site-packages/")
+# set(ENV{PYTHONPATH} "/opt/ros/foxy/lib/python3.8/site-packages/")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
@@ -13,7 +13,12 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic -O3 -march=native)
+  add_compile_options(-Wall -Wextra -Wpedantic -O3 -march=native
+             -Wdeprecated-declarations
+             -Woverloaded-virtual
+             -Wunused-variable
+             -Wreorder
+             -Wnarrowing)
 endif()
 
 find_package(ament_cmake REQUIRED)
@@ -29,11 +34,14 @@ find_package(yaml-cpp REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(image_transport REQUIRED)
 
+find_package(OpenCV REQUIRED)
+
 
 include_directories(
   include
   ${ORB_SLAM3_ROOT_DIR}/include
   ${ORB_SLAM3_ROOT_DIR}/include/CameraModels
+  ${ORB_SLAM3_ROOT_DIR}/Thirdparty/Sophus
 )
 
 link_directories(
@@ -47,7 +55,11 @@ add_executable(orbslam3_odometry
   src/stereo/just_check_stereo_calibration.cpp
   src/stereo/stereo_rectification.cpp
 )
-ament_target_dependencies(orbslam3_odometry rclcpp sensor_msgs cv_bridge message_filters ORB_SLAM3 Pangolin nav_msgs yaml-cpp)
+target_link_libraries(orbslam3_odometry
+      ${OpenCV_LIBS})
+ament_target_dependencies(orbslam3_odometry 
+  tf2_geometry_msgs
+  rclcpp sensor_msgs cv_bridge message_filters ORB_SLAM3 Pangolin nav_msgs yaml-cpp)
 
 
 install(TARGETS orbslam3_odometry DESTINATION lib/${PROJECT_NAME})

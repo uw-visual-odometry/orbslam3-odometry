@@ -1,9 +1,9 @@
 /orbslam3_odometry: 
   ros__parameters: 
     # Topic for subscription
-    topic_camera_left: /camera/left_image
-    topic_camera_right: /camera/right_image
-    topic_imu: /imu/data  # will be ignored
+    topic_camera_left: /left/image_rect
+    topic_camera_right: /right/image_rect
+    topic_imu: /imu  # will be ignored
 
     # Topic for odometry pubblication
     topic_orbslam_odometry: /Odometry/orbSlamOdom
@@ -16,7 +16,6 @@
     #   stereo_imu    # will be ignored
     # Monocular mode will subscribe to topic_camera_left if topic_is_camera_left is true 
     system_mode: stereo
-
     
     # For monocular version only. It indicates whether to subscribe to camera left or right topic for images. 
     #   true    -> camera left's topic 
@@ -35,8 +34,8 @@
     #   cutting_rect = cv::Rect(cutting_x, cutting_y, cutting_width, cutting_height);
     #   new_image = old_image(cutting_rect);
     # if cutting_x is -1, the images will not be cropped.
-    cutting_x: 0
-    cutting_y: 200
+    cutting_x: -1
+    cutting_y: 0
     cutting_width: 1280 
     cutting_height: 450
 
@@ -44,14 +43,7 @@
     #   false to disable the visualizer
     #   true to enable it
     pangolin_visualization: true
-
-    # Full file path to vocabulary of ORB_SLAM3 
-    path_vocabulary: src/orbslam3_odometry/config/ORBvoc.txt
-
-    # Full file path to yaml settings (for ORB_SLAM3)
-    path_yaml_settings: /mnt/hgfs/cartella_condivisa/bag_26_05_24/basler_stereo_26_05_24_test.yaml
-    
-
+   
     # For stereo mode only. Doesn't make ORB_SLAM3 start (if true). It just shows the results of the stereo calibration with the params in the path_yaml_settings
     just_check_stereo_calibration: false
     
@@ -59,6 +51,16 @@
     # true: take photo for calibration (press spacebar to take photo). Doesn't make ORB_SLAM3 start. 
     # false: disable this functionality
     just_take_picture: false
-    
+
+    # The following params should be set in the launchfile (where package paths
+    # can be used)
+    #
+    # Full file path to vocabulary of ORB_SLAM3 
+    # path_vocabulary: /home/aaron/workspace/aquarium/ORB_SLAM3/Vocabulary/ORBvoc.txt
+
+    # Full file path to yaml settings (for ORB_SLAM3)
+    # path_yaml_settings: /home/aaron/workspace/aquarium/orbslam3_ws/src/orbslam3-odometry/src/orbslam3_odometry/config/aquarium_nano_stereo.yaml
+ 
+
     
 
