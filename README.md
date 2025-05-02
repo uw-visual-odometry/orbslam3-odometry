@@ -66,4 +66,4 @@ orbslam is configured to take _rectified_ images.  If I read [this line](https:/
 
 `orbslam3_odometry.launch.py`, `orblsam3_odometry.yaml`, and `aquarium_nano_stereo.yaml` have all been "tuned" for our cameras and data.
 
-I was testing on the desktop under ROS Jazzy.
+I was testing on the desktop under ROS Jazzy.  I found the system worked much better with [Zenoh as the middleware](https://github.com/ros2/rmw_zenoh)
