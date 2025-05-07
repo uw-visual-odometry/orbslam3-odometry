@@ -12,6 +12,9 @@ void MonocularSlamNode::loadParameters() {
 
   declare_parameter("topic_camera_left", "/camera/left_image");
   declare_parameter("topic_camera_right", "/camera/right_image");
+  declare_parameter("topic_camera_info_left", "/camera/left_camera_info");
+  declare_parameter("topic_camera_info_right", "/camera/right_camera_info");
+
   declare_parameter("topic_imu", "/imu/data");
   declare_parameter("topic_orbslam_odometry", "/Odometry/orbSlamOdom");
   declare_parameter("topic_header_frame_id", "os_track");
@@ -28,8 +31,11 @@ void MonocularSlamNode::loadParameters() {
 
   /* ***** READING PARAMETERS ***** */
 
-  get_parameter("topic_camera_left", this->camera_left);
-  get_parameter("topic_camera_right", this->camera_right);
+  get_parameter("topic_camera_left", this->camera_left_topic);
+  get_parameter("topic_camera_right", this->camera_right_topic);
+  get_parameter("topic_camera_info_left", this->camera_left_info_topic);
+  get_parameter("topic_camera_info_right", this->camera_right_info_topic);
+
   get_parameter("topic_imu", this->imu);
   get_parameter("topic_orbslam_odometry", this->topic_pub_quat);
   get_parameter("topic_header_frame_id", this->header_id_frame);
@@ -43,9 +49,12 @@ void MonocularSlamNode::loadParameters() {
   get_parameter("cropping_height", this->cropping_height);
 }
 
-MonocularSlamNode::MonocularSlamNode(ORB_SLAM3::System *pSLAM)
-    : Node("orbslam3_odometry") {
+MonocularSlamNode::MonocularSlamNode() : MainNode("orbslam3_odometry") {
   this->loadParameters();
+
+  m_SLAM = std::make_shared<ORB_SLAM3::System>(path_vocabulary, path_settings,
+                                               ORB_SLAM3::System::STEREO,
+                                               pangolin_visualization);
 
   // Compute cropping rect
   if (cropping_x != -1)
@@ -54,13 +63,12 @@ MonocularSlamNode::MonocularSlamNode(ORB_SLAM3::System *pSLAM)
 
   rclcpp::QoS qos(rclcpp::KeepLast(10));
   qos.best_effort();
-
-  m_SLAM = pSLAM;
+  const auto qos_profile = qos.get_rmw_qos_profile();
 
   if (this->isCameraLeft) {
-    m_image_subscriber = this->create_subscription<ImageMsg>(
-        this->camera_left, qos,
-        std::bind(&MonocularSlamNode::GrabImage, this, std::placeholders::_1));
+    subscription_img.subscribe(this, this->camera_left_topic, qos_profile);
+    subscription_info.subscribe(this, this->camera_left_info_topic,
+                                qos_profile);
 
     // The provided degree must become negative if the tracked camera is the
     // left
@@ -69,16 +77,28 @@ MonocularSlamNode::MonocularSlamNode(ORB_SLAM3::System *pSLAM)
     RCLCPP_INFO(this->get_logger(),
                 "ORB-SLAM3 STARTED IN MONOCULAR MODE. NODE WILL WAIT FOR "
                 "IMAGES IN TOPIC %s",
-                this->camera_left.c_str());
+                this->camera_left_topic.c_str());
   } else {
-    m_image_subscriber = this->create_subscription<ImageMsg>(
-        this->camera_right, qos,
-        std::bind(&MonocularSlamNode::GrabImage, this, std::placeholders::_1));
+    subscription_img.subscribe(this, this->camera_right_topic, qos_profile);
+    subscription_info.subscribe(this, this->camera_right_info_topic,
+                                qos_profile);
+
     RCLCPP_INFO(this->get_logger(),
                 "ORB-SLAM3 STARTED IN MONOCULAR MODE. NODE WILL WAIT FOR "
                 "IMAGES IN TOPIC %s",
-                this->camera_right.c_str());
+                this->camera_right_topic.c_str());
   }
+
+  uint32_t queue_size = 10;
+  sync_ = std::make_shared<MonocularImageSync>(
+      message_filters::sync_policies::ApproximateTime<ImageMsg, CameraInfo>(
+          queue_size),
+      subscription_img, subscription_info);
+
+  sync_->setAgePenalty(1.00);
+  sync_->registerCallback(std::bind(&MonocularSlamNode::syncedCallback, this,
+                                    std::placeholders::_1,
+                                    std::placeholders::_2));
 
   quaternion_pub =
       this->create_publisher<nav_msgs::msg::Odometry>(topic_pub_quat, 10);
@@ -121,7 +141,10 @@ static std::string quaternionToString(const Eigen::Quaternionf &q) {
 /**
  * Image callback
  */
-void MonocularSlamNode::GrabImage(const ImageMsg::SharedPtr msg) {
+
+void MonocularSlamNode::syncedCallback(
+    const ImageMsg::ConstSharedPtr &image_msg,
+    const CameraInfo::ConstSharedPtr &camera_info) {
   RCLCPP_INFO(this->get_logger(), "Sono nella callback");
 
   // Inizial time
@@ -130,7 +153,8 @@ void MonocularSlamNode::GrabImage(const ImageMsg::SharedPtr msg) {
   // Copy the ros image message to cv::Mat.
   try {
     // m_cvImPtr = cv_bridge::toCvShare(msg, "bgr8");  // For image
-    m_cvImPtr = cv_bridge::toCvCopy(msg, "bgr8");  // For compressed images
+    m_cvImPtr =
+        cv_bridge::toCvCopy(image_msg, "bgr8");  // For compressed images
 
     // m_cvImPtr = cv_bridge::toCvCopy(msg); // Prima c'era questo
   } catch (cv_bridge::Exception &e) {
@@ -146,7 +170,7 @@ void MonocularSlamNode::GrabImage(const ImageMsg::SharedPtr msg) {
 
   // Call ORB-SLAM3 with provided image
   Sophus::SE3f Tcw = m_SLAM->TrackMonocular(
-      image_for_orbslam, Utility::StampToSec(msg->header.stamp));
+      image_for_orbslam, Utility::StampToSec(image_msg->header.stamp));
 
   // Obtain the position and the orientation
   Sophus::SE3f Twc = Tcw.inverse();

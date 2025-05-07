@@ -10,75 +10,94 @@ endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic -O3 -march=native
-             -Wdeprecated-declarations
-             -Woverloaded-virtual
-             -Wunused-variable
-             -Wreorder
-             -Wnarrowing)
+             -Wno-deprecated-declarations
+             -Wno-narrowing
+             -Wno-overloaded-virtual
+             -Wno-reorder
+             -Wno-sign-compare
+             -Wno-unused-parameter
+             -Wno-unused-variable
+)
 endif()
 
 find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(sensor_msgs REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
-find_package(cv_bridge REQUIRED)
-find_package(message_filters REQUIRED)
-find_package(Sophus REQUIRED)
-find_package(Pangolin REQUIRED)
-find_package(ORB_SLAM3 REQUIRED)
-find_package(nav_msgs REQUIRED)
-find_package(yaml-cpp REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
-find_package(image_transport REQUIRED)
+
+set(AMENT_DEPENDENCIES
+    cv_bridge
+    image_transport
+    message_filters
+    nav_msgs
+    ORB_SLAM3
+    Pangolin
+    Sophus
+    rclcpp
+    sensor_msgs
+    tf2_geometry_msgs
+    tf2_ros
+    yaml-cpp
+)
+
+foreach(Dependency IN ITEMS ${AMENT_DEPENDENCIES})
+  find_package(${Dependency} REQUIRED)
+endforeach()
 
 find_package(OpenCV REQUIRED COMPONENTS highgui)
 
 include_directories(
   include
-  /home/sysop/aaron/orbslam3_ros2_ws/src/ORB_SLAM3/Thirdparty/Sophus
   ${ORB_SLAM3_ROOT_DIR}/include
   ${ORB_SLAM3_ROOT_DIR}/include/CameraModels
   ${ORB_SLAM3_ROOT_DIR}/Thirdparty/Sophus
 )
 
-link_directories(
-  include
-)
-
-add_executable(orbslam3_odometry
+# orbslam3_stereo
+#
+add_executable(orbslam3_stereo
   src/stereo/stereo.cpp
-  src/monocular/monocular.cpp
-  src/main_node.cpp
-  src/stereo/just_check_stereo_calibration.cpp
+  src/stereo/stereo_node.cpp
   src/stereo/stereo_rectification.cpp
 )
-ament_target_dependencies(orbslam3_odometry
-        cv_bridge
-        message_filters
-        nav_msgs
-        ORB_SLAM3
-        Pangolin
-        rclcpp
-        sensor_msgs
-        tf2_geometry_msgs
-        tf2_ros
-        yaml-cpp
-        )
-target_link_libraries(orbslam3_odometry
+ament_target_dependencies(orbslam3_stereo
+  ${AMENT_DEPENDENCIES} )
+target_link_libraries(orbslam3_stereo
   ${OpenCV_LIBRARIES})
 
 
-install(TARGETS orbslam3_odometry DESTINATION lib/${PROJECT_NAME})
-
-# Install launch directory
-install(DIRECTORY
-  launch
-  DESTINATION share/${PROJECT_NAME}
+# orbslam3_mono
+#
+add_executable(orbslam3_mono
+  src/monocular/monocular.cpp
+  src/monocular/monocular_node.cpp
 )
+ament_target_dependencies(orbslam3_mono
+  ${AMENT_DEPENDENCIES} )
+target_link_libraries(orbslam3_mono
+  ${OpenCV_LIBRARIES})
 
-# Install launch files.
-install(DIRECTORY launch config
-  config
+# orbslam3_check_stereo
+#
+add_executable(orbslam3_check_stereo
+  src/stereo/just_check_stereo_calibration.cpp
+  src/stereo/stereo_rectification.cpp
+)
+ament_target_dependencies(orbslam3_check_stereo
+  ${AMENT_DEPENDENCIES} )
+target_link_libraries(orbslam3_check_stereo
+  ${OpenCV_LIBRARIES})
+
+#
+# Install targets
+#
+install(TARGETS
+    orbslam3_stereo
+    orbslam3_mono
+    orbslam3_check_stereo
+DESTINATION lib/${PROJECT_NAME})
+
+
+install(DIRECTORY
+    launch
+    config
   DESTINATION share/${PROJECT_NAME}/)
 
 ament_package()

@@ -1,18 +1,19 @@
-#ifndef __STEREO_SLAM_NODE_HPP__
-#define __STEREO_SLAM_NODE_HPP__
+#pragma once
 
-#include <cv_bridge/cv_bridge.hpp>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include "orbslam3_odometry/main_node.hpp"
+#include "orbslam3_odometry/utility.hpp"
+#include "stereo_rectification.hpp"
 
+// ORBSLAM header files
 #include "Frame.h"
 #include "Map.h"
 #include "System.h"
 #include "Tracking.h"
+#include "cv_bridge/cv_bridge.hpp"
 #include "message_filters/subscriber.h"
 #include "message_filters/sync_policies/approximate_time.h"
 #include "message_filters/synchronizer.h"
 #include "nav_msgs/msg/odometry.hpp"
-#include "orbslam3_odometry/utility.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/camera_info.hpp"
 #include "sensor_msgs/msg/compressed_image.hpp"
@@ -20,13 +21,13 @@
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "sensor_msgs/msg/point_field.hpp"
 #include "std_msgs/msg/string.hpp"
-#include "stereo_rectification.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 using sensor_msgs::msg::CameraInfo;
 
-class StereoSlamNode : public rclcpp::Node {
+class StereoSlamNode : public MainNode {
  public:
-  StereoSlamNode(ORB_SLAM3::System *pSLAM, const string &strSettingsFile);
+  StereoSlamNode();
 
   ~StereoSlamNode();
 
@@ -38,7 +39,7 @@ class StereoSlamNode : public rclcpp::Node {
                       const CameraInfo::ConstSharedPtr &left_info,
                       const CameraInfo::ConstSharedPtr &right_info);
 
-  ORB_SLAM3::System *m_SLAM;
+  std::shared_ptr<ORB_SLAM3::System> m_SLAM;
 
   // Images stuff
   message_filters::Subscriber<ImageMsg> subscription_left;
@@ -52,17 +53,15 @@ class StereoSlamNode : public rclcpp::Node {
       StereoImageSync;
   std::shared_ptr<StereoImageSync> sync_;
 
-  std::mutex bufMutexLeft_, bufMutexRight_;
   double timestamp;
-
-  std::thread *syncThread_;
 
   rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr quaternion_pub;
 
   // List of all parameters
-  std::string camera_left_topic, camera_right_topic, imu, header_id_frame,
-      child_id_frame;
+  std::string camera_left_topic, camera_right_topic;
   std::string camera_left_info_topic, camera_right_info_topic;
+  std::string imu, header_id_frame, child_id_frame;
+
   std::string topic_pub_quat;
 
   // cropping parameters
@@ -89,4 +88,3 @@ class StereoSlamNode : public rclcpp::Node {
       publisherPointCloud;
   cv::Scalar interpolateColor(float value, float minDepth, float maxDepth);
 };
-#endif

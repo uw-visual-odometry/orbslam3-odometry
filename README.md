@@ -66,7 +66,7 @@ $ source install/setup.bash
 
 3. Launch
 ``` bash
-$ ros2 launch orbslam3_odometry orbslam3-odometry_launch.py
+$ ros2 launch orbslam3_odometry stereo.launch.py
 ```
 
 

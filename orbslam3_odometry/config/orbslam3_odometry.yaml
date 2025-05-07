@@ -64,3 +64,6 @@
 
     # Full file path to yaml settings (for ORB_SLAM3)
     # path_yaml_settings: /home/aaron/workspace/aquarium/orbslam3_ws/src/orbslam3-odometry/src/orbslam3_odometry/config/aquarium_nano_stereo.yaml
+
+    # Gamma correction applied to images before processing.
+    gamma_correction: 1.3

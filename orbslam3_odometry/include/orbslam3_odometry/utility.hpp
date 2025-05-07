@@ -1,5 +1,4 @@
-#ifndef __UTILITY_HPP__
-#define __UTILITY_HPP__
+#pragma once
 
 #include "rclcpp/rclcpp.hpp"
 
@@ -45,5 +44,3 @@ class Utility {
     std::cout << "\n\n****" << std::endl;
   }
 };
-
-#endif

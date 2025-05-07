@@ -24,7 +24,7 @@ def generate_launch_description():
     nodes = [
         Node(
             package="image_proc",
-            name="rectify_node",
+            name="left_rectify_node",
             executable="rectify_node",
             remappings=[
                 ("image", "/left/image_raw"),
@@ -34,7 +34,7 @@ def generate_launch_description():
         ),
         Node(
             package="image_proc",
-            name="rectify_node",
+            name="right_rectify_node",
             executable="rectify_node",
             remappings=[
                 ("image", "/right/image_raw"),
@@ -45,7 +45,7 @@ def generate_launch_description():
         Node(
             package="orbslam3_odometry",
             name="orbslam3_odometry",
-            executable="orbslam3_odometry",
+            executable="orbslam3_stereo",
             output="screen",
             # prefix="gdbserver localhost:3000",
             parameters=[
@@ -53,7 +53,6 @@ def generate_launch_description():
                 {
                     "path_yaml_settings": orbslam3_config,
                     "path_vocabulary": orbslam3_vocabulary,
-                    "image_gamma": 1.0,
                 },
             ],
         ),

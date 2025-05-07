@@ -6,21 +6,21 @@
 #include "message_filters/subscriber.h"
 #include "message_filters/sync_policies/approximate_time.h"
 #include "message_filters/synchronizer.h"
+#include "orbslam3_odometry/main_node.hpp"
 #include "orbslam3_odometry/utility.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/camera_info.hpp"
 #include "sensor_msgs/msg/compressed_image.hpp"
 #include "sensor_msgs/msg/image.hpp"
-#include "stereo_rectification.h"
+#include "stereo_rectification.hpp"
 
 using namespace std::chrono_literals;
 
 using sensor_msgs::msg::CameraInfo;
 
-class JustCheckStereoCalibration : public rclcpp::Node {
+class JustCheckStereoCalibration : public MainNode {
  public:
-  JustCheckStereoCalibration(const std::string &strSettingsFile)
-      : Node("orbslam3_odometry") {
+  JustCheckStereoCalibration() : MainNode("orbslam3_odometry") {
     this->loadParameters();
 
     rclcpp::QoS qos(rclcpp::KeepLast(10));
@@ -44,7 +44,7 @@ class JustCheckStereoCalibration : public rclcpp::Node {
     } else {
       // Read the parametes and compute the common_roi, so that cropped and
       // rectified images will have the same size
-      readParameters(strSettingsFile, map1_L, map2_L, roi_L, map1_R, map2_R,
+      readParameters(path_settings, map1_L, map2_L, roi_L, map1_R, map2_R,
                      roi_R);
       common_roi = roi_L & roi_R;
       RCLCPP_INFO(this->get_logger(),
@@ -222,3 +222,28 @@ class JustCheckStereoCalibration : public rclcpp::Node {
   const std::string pathLeft = path + "/left/";
   const std::string pathRight = path + "/right/";
 };
+
+//----------------------------
+
+void handleSignal(int signal) {
+  if (signal == SIGINT) {
+    std::cout << "Received SIGINT. Killing MainNode process." << std::endl;
+    rclcpp::shutdown();
+  }
+}
+
+int main(int argc, char **argv) {
+  signal(SIGINT, handleSignal);
+
+  /* node initialization */
+  rclcpp::init(argc, argv);
+
+  auto node = std::make_shared<JustCheckStereoCalibration>();
+
+  std::cout << "============================ " << std::endl;
+
+  rclcpp::spin(node);
+  rclcpp::shutdown();
+
+  return 0;
+}

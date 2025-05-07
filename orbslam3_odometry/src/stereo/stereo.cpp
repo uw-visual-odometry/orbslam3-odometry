@@ -4,13 +4,10 @@
 #include <opencv2/core/core.hpp>
 
 // If defined the node will print debug information and will show disparity map
-// #define DEBUG
+#define DEBUG
 
 // If defined, the pointcloud created by orbslam will be published
 // #define PUBLISH_POINT_CLOUD
-
-// To have debug prints, comment this line:
-#define RCLCPP_INFO(...) (void)0
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -31,7 +28,7 @@ void StereoSlamNode::loadParameters() {
   declare_parameter("cropping_width", 0);
   declare_parameter("cropping_height", 0);
 
-  declare_parameter("gamma", 1.0);
+  declare_parameter("gamma_correction", 1.0);
 
   /* ******************************** */
 
@@ -50,50 +47,54 @@ void StereoSlamNode::loadParameters() {
   get_parameter("cropping_width", this->cropping_width);
   get_parameter("cropping_height", this->cropping_height);
 
-  get_parameter("gamma", this->image_gamma_);
+  get_parameter("gamma_correction", this->image_gamma_);
 }
 
-StereoSlamNode::StereoSlamNode(ORB_SLAM3::System *pSLAM,
-                               const string &strSettingsFile)
-    : Node("orbslam3_odometry"), m_SLAM(pSLAM) {
+StereoSlamNode::StereoSlamNode() : MainNode("orbslam3_odometry") {
   // Load parameters
   this->loadParameters();
 
+  RCLCPP_INFO_STREAM(this->get_logger(),
+                     "Loading settings from " << path_settings);
+
+  m_SLAM = std::make_shared<ORB_SLAM3::System>(path_vocabulary, path_settings,
+                                               ORB_SLAM3::System::STEREO,
+                                               pangolin_visualization);
+
+  RCLCPP_WARN(this->get_logger(), "Created ORB_SLAM3::System");
+
   // Compute cropping rect
-  if (cropping_x != -1)
+  if (cropping_x != -1) {
     cropping_rect =
         cv::Rect(cropping_x, cropping_y, cropping_width, cropping_height);
+  }
 
-#ifdef DEBUG
-  RCLCPP_INFO(this->get_logger(), "Topic camera left: %s",
-              this->camera_left.c_str());
-  RCLCPP_INFO(this->get_logger(), "Topic camera right: %s",
-              this->camera_right.c_str());
-  RCLCPP_INFO(this->get_logger(), "Topic imu: %s", this->imu.c_str());
-  RCLCPP_INFO(this->get_logger(), "header_id_frame: %s",
-              this->header_id_frame.c_str());
-  RCLCPP_INFO(this->get_logger(), "child_id_frame: %s",
-              this->child_id_frame.c_str());
-  RCLCPP_INFO(this->get_logger(), "topic_orbslam_odometry: %s",
-              this->topic_pub_quat.c_str());
-#endif
+  RCLCPP_INFO_STREAM(this->get_logger(),
+                     "Topic camera left: " << this->camera_left_topic);
+  RCLCPP_INFO_STREAM(this->get_logger(),
+                     "Topic camera right: " << this->camera_right_topic);
 
-  // Images subscriptions and odomotry pubblication
+  RCLCPP_INFO_STREAM(this->get_logger(), "Topic imu: " << this->imu);
+  RCLCPP_INFO_STREAM(this->get_logger(),
+                     "header_id_frame: " << this->header_id_frame);
+  RCLCPP_INFO_STREAM(this->get_logger(),
+                     "child_id_frame: " << this->child_id_frame);
+  RCLCPP_INFO_STREAM(this->get_logger(),
+                     "topic_orbslam_odometry: " << this->topic_pub_quat);
+
+  // Images subscriptions and odometry publication
 
   rclcpp::QoS qos(rclcpp::KeepLast(10));
   qos.best_effort();
+  const auto qos_profile = qos.get_rmw_qos_profile();
 
-  subscription_left.subscribe(this, this->camera_left_topic,
-                              qos.get_rmw_qos_profile());
-  subscription_right.subscribe(this, this->camera_right_topic,
-                               qos.get_rmw_qos_profile());
+  subscription_left.subscribe(this, this->camera_left_topic, qos_profile);
+  subscription_right.subscribe(this, this->camera_right_topic, qos_profile);
 
   subscription_left_info.subscribe(this, this->camera_left_info_topic,
-                                   qos.get_rmw_qos_profile(),
-                                   rclcpp::SubscriptionOptions());
+                                   qos_profile);
   subscription_right_info.subscribe(this, this->camera_right_info_topic,
-                                    qos.get_rmw_qos_profile(),
-                                    rclcpp::SubscriptionOptions());
+                                    qos_profile);
 
   uint32_t queue_size = 10;
   sync_ = std::make_shared<StereoImageSync>(
@@ -111,10 +112,11 @@ StereoSlamNode::StereoSlamNode(ORB_SLAM3::System *pSLAM,
   quaternion_pub =
       this->create_publisher<nav_msgs::msg::Odometry>(topic_pub_quat, 10);
 
-  RCLCPP_INFO(this->get_logger(),
-              "ORB-SLAM3 STARTED IN STEREO MODE. NODE WILL WAIT FOR IMAGES IN "
-              "TOPICS %s and %s",
-              this->camera_left.c_str(), this->camera_right.c_str());
+  RCLCPP_INFO_STREAM(
+      this->get_logger(),
+      "ORB-SLAM3 STARTED IN STEREO MODE. NODE WILL WAIT FOR IMAGES IN "
+      "TOPICS "
+          << this->camera_left_topic << " and " << this->camera_right_topic);
   Utility::printCommonInfo(qos);
 
   contImageLeft = 0;
@@ -132,26 +134,31 @@ StereoSlamNode::StereoSlamNode(ORB_SLAM3::System *pSLAM,
 }
 
 StereoSlamNode::~StereoSlamNode() {
-  RCLCPP_INFO(this->get_logger(), "Number of left images arrived:\t" +
-                                      std::to_string(contImageLeft));
-  RCLCPP_INFO(this->get_logger(), "Number of right images arrived:\t" +
-                                      std::to_string(contImageRight));
-  RCLCPP_INFO(this->get_logger(), "Number of TrackStereo calls:\t" +
-                                      std::to_string(contTrackStereo));
-  RCLCPP_INFO(this->get_logger(), "First timestamp of left image:\t" +
-                                      std::to_string(firstTimeStampLeft));
-  RCLCPP_INFO(this->get_logger(), "Last timestamp of left image:\t" +
-                                      std::to_string(lastTimeStampLeft));
+  RCLCPP_INFO_STREAM(this->get_logger(), "Number of left images arrived: "
+                                             << std::to_string(contImageLeft));
+  RCLCPP_INFO_STREAM(this->get_logger(), "Number of right images arrived: "
+                                             << std::to_string(contImageRight));
+  RCLCPP_INFO_STREAM(
+      this->get_logger(),
+      "Number of TrackStereo calls: " << std::to_string(contTrackStereo));
+  RCLCPP_INFO_STREAM(
+      this->get_logger(),
+      "First timestamp of left image: " << std::to_string(firstTimeStampLeft));
+  RCLCPP_INFO_STREAM(
+      this->get_logger(),
+      "Last timestamp of left image: " << std::to_string(lastTimeStampLeft));
 
   // Stop all threads
-  m_SLAM->Shutdown();
+  if (m_SLAM) {
+    m_SLAM->Shutdown();
 
-  // Save camera and keyframe trajectory
-  RCLCPP_INFO(this->get_logger(), "Exit and saving... ");
-  m_SLAM->SaveKeyFrameTrajectoryEuRoC("KeyFrameTrajectory.txt");
-  m_SLAM->SaveTrajectoryEuRoC("CameraTrajectory.txt");
-  RCLCPP_INFO(this->get_logger(), "Saved KeyFrameTrajectory.txt ");
-  RCLCPP_INFO(this->get_logger(), "Saved CameraTrajectory.txt ");
+    // Save camera and keyframe trajectory
+    RCLCPP_INFO(this->get_logger(), "Exit and saving... ");
+    m_SLAM->SaveKeyFrameTrajectoryEuRoC("KeyFrameTrajectory.txt");
+    m_SLAM->SaveTrajectoryEuRoC("CameraTrajectory.txt");
+    RCLCPP_INFO(this->get_logger(), "Saved KeyFrameTrajectory.txt ");
+    RCLCPP_INFO(this->get_logger(), "Saved CameraTrajectory.txt ");
+  }
 }
 
 /**
@@ -166,25 +173,22 @@ static std::string quaternionToString(const Eigen::Quaternionf &q) {
 }
 
 void StereoSlamNode::syncedCallback(
-    const ImageMsg::ConstSharedPtr &left_imagemsg,
-    const ImageMsg::ConstSharedPtr &right_imagemsg,
+    const ImageMsg::ConstSharedPtr &left_image_msg,
+    const ImageMsg::ConstSharedPtr &right_image_msg,
     const CameraInfo::ConstSharedPtr &left_info,
     const CameraInfo::ConstSharedPtr &right_info) {
-  RCLCPP_INFO(this->get_logger(), "GrabStereo ");
+  cv::Mat left_image, right_image;
 
-  cv::Mat left_image_, right_image_;
-
-  double t = left_imagemsg->header.stamp.sec +
-             (left_imagemsg->header.stamp.nanosec / 1e9);
+  double t = left_image_msg->header.stamp.sec +
+             (left_image_msg->header.stamp.nanosec / 1e9);
   if (firstTimeStampLeft == -1) firstTimeStampLeft = t;
   lastTimeStampLeft = t;
   try {
-    RCLCPP_INFO(this->get_logger(), "left");
-    left_image_ = cv_bridge::toCvCopy(left_imagemsg, "bgr8")->image;
+    left_image = cv_bridge::toCvCopy(left_image_msg, "bgr8")->image;
 
     tImLeft = t;
 
-    timestamp = Utility::StampToSec(left_imagemsg->header.stamp);
+    timestamp = Utility::StampToSec(left_image_msg->header.stamp);
   } catch (cv_bridge::Exception &e) {
     RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
     return;
@@ -192,10 +196,9 @@ void StereoSlamNode::syncedCallback(
 
   try {
     contImageRight++;
-    RCLCPP_INFO(this->get_logger(), "right");
-    right_image_ = cv_bridge::toCvCopy(right_imagemsg, "bgr8")->image;
-    tImRight = right_imagemsg->header.stamp.sec +
-               (right_imagemsg->header.stamp.nanosec / 1e9);
+    right_image = cv_bridge::toCvCopy(right_image_msg, "bgr8")->image;
+    tImRight = right_image_msg->header.stamp.sec +
+               (right_image_msg->header.stamp.nanosec / 1e9);
   } catch (cv_bridge::Exception &e) {
     RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
     return;
@@ -207,56 +210,51 @@ void StereoSlamNode::syncedCallback(
 
   // If necessary, perform changes to the images here.
   if (cropping_x != -1) {
-    bufMutexLeft_.lock();
-    Utility::cropping_image(left_image_, cropping_rect);
-    bufMutexLeft_.unlock();
-
-    bufMutexRight_.lock();
-    Utility::cropping_image(right_image_, cropping_rect);
-    bufMutexRight_.unlock();
+    Utility::cropping_image(left_image, cropping_rect);
+    Utility::cropping_image(right_image, cropping_rect);
   }
 
   if (image_gamma_ != 1.0) {
     // If configured, apply gamma correction to incoming images
     cv::Mat left_postproc, right_postproc;
 
-    left_image_.convertTo(left_postproc, CV_32FC3, 1 / 255.0);
-    right_image_.convertTo(right_postproc, CV_32FC3, 1 / 255.0);
+    left_image.convertTo(left_postproc, CV_32FC3, 1 / 255.0);
+    right_image.convertTo(right_postproc, CV_32FC3, 1 / 255.0);
 
     cv::pow(left_postproc, image_gamma_, left_postproc);
     cv::pow(right_postproc, image_gamma_, right_postproc);
 
-    left_postproc.convertTo(left_image_, CV_8UC3, 255);
-    right_postproc.convertTo(right_image_, CV_8UC3, 255);
+    left_postproc.convertTo(left_image, CV_8UC3, 255);
+    right_postproc.convertTo(right_image, CV_8UC3, 255);
   }
 
   // Call ORB-SLAM3 on the 2 original images
-  Sophus::SE3f Tcw = m_SLAM->TrackStereo(left_image_, right_image_, timestamp);
+  const Sophus::SE3f Tcw =
+      m_SLAM->TrackStereo(left_image, right_image, timestamp);
 
+  // Invert the tracking motion to get body motion (?)
   // Obtain the position and the quaternion
-  Sophus::SE3f Twc = Tcw.inverse();
-  Eigen::Vector3f twc = Twc.translation();
-  Eigen::Quaternionf q = Twc.unit_quaternion();
+  const Sophus::SE3f Twc = Tcw.inverse();
+  const Eigen::Vector3f twc = Twc.translation();
+  const Eigen::Quaternionf q = Twc.unit_quaternion();
 
-  // String containing the quaternion
-  std::string messaggio_quaternion = quaternionToString(q);
-
-  // I publish position and quaternion (rotated)
+  // publish position and quaternion (rotated)
   auto message = nav_msgs::msg::Odometry();
   geometry_msgs::msg::Pose output_pose{};
 
-  output_pose.position.x = twc.z();
-  output_pose.position.y = -twc.x();
-  output_pose.position.z = 0;
+  output_pose.position.x = twc.x();
+  output_pose.position.y = twc.y();
+  output_pose.position.z = twc.z();
 
-  output_pose.orientation.x = -q.z();
-  output_pose.orientation.y = -q.x();
-  output_pose.orientation.z = -q.y();
+  output_pose.orientation.x = q.x();
+  output_pose.orientation.y = q.y();
+  output_pose.orientation.z = q.z();
   output_pose.orientation.w = q.w();
 
   // Set Roll and Pitch to Zero
   tf2::Quaternion tf2_quat;
   tf2::fromMsg(output_pose.orientation, tf2_quat);
+
   double roll, pitch, yaw;
   tf2::Matrix3x3 m(tf2_quat);
   m.getRPY(roll, pitch, yaw);
@@ -266,8 +264,6 @@ void StereoSlamNode::syncedCallback(
   message.pose.pose = output_pose;
   message.header.frame_id = header_id_frame;
   message.child_frame_id = child_id_frame;
-
-  // add timestamp to message
   message.header.stamp = this->now();
 
   quaternion_pub->publish(message);
