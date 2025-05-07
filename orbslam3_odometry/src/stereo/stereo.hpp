@@ -69,16 +69,8 @@ class StereoSlamNode : public MainNode {
   cv::Rect cropping_rect;
   double image_gamma_;
 
-  // Rectification params
-  cv::Mat map1_L, map2_L, map1_R, map2_R;
-  cv::Rect roi_L, roi_R, common_roi;
-
-  int contImageLeft, contImageRight, contTrackStereo;
+  int image_count_, track_stereo_count_;
   double firstTimeStampLeft, lastTimeStampLeft;
-
-  // Left and right timestamp
-  double tImLeft, tImRight;
-
   // Point cloud and Key points varables/methods
   std::vector<float> depths;
   sensor_msgs::msg::PointCloud2 mappoint_to_pointcloud(

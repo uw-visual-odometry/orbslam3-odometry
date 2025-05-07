@@ -6,9 +6,6 @@
 // If defined the node will print debug information and will show disparity map
 #define DEBUG
 
-// If defined, the pointcloud created by orbslam will be published
-// #define PUBLISH_POINT_CLOUD
-
 using std::placeholders::_1;
 using std::placeholders::_2;
 
@@ -50,7 +47,8 @@ void StereoSlamNode::loadParameters() {
   get_parameter("gamma_correction", this->image_gamma_);
 }
 
-StereoSlamNode::StereoSlamNode() : MainNode("orbslam3_odometry") {
+StereoSlamNode::StereoSlamNode()
+    : MainNode("orbslam3_odometry"), track_stereo_count_(0), image_count_(0) {
   // Load parameters
   this->loadParameters();
 
@@ -119,11 +117,6 @@ StereoSlamNode::StereoSlamNode() : MainNode("orbslam3_odometry") {
           << this->camera_left_topic << " and " << this->camera_right_topic);
   Utility::printCommonInfo(qos);
 
-  contImageLeft = 0;
-  contImageRight = 0;
-  contTrackStereo = 0;
-  firstTimeStampLeft = -1;
-
 #ifdef PUBLISH_POINT_CLOUD
   publisherPointCloud = this->create_publisher<sensor_msgs::msg::PointCloud2>(
       "/camera/pointCloud", 10);
@@ -134,19 +127,11 @@ StereoSlamNode::StereoSlamNode() : MainNode("orbslam3_odometry") {
 }
 
 StereoSlamNode::~StereoSlamNode() {
-  RCLCPP_INFO_STREAM(this->get_logger(), "Number of left images arrived: "
-                                             << std::to_string(contImageLeft));
-  RCLCPP_INFO_STREAM(this->get_logger(), "Number of right images arrived: "
-                                             << std::to_string(contImageRight));
+  RCLCPP_INFO_STREAM(this->get_logger(), "Number of images pairs arrived: "
+                                             << std::to_string(image_count_));
   RCLCPP_INFO_STREAM(
       this->get_logger(),
-      "Number of TrackStereo calls: " << std::to_string(contTrackStereo));
-  RCLCPP_INFO_STREAM(
-      this->get_logger(),
-      "First timestamp of left image: " << std::to_string(firstTimeStampLeft));
-  RCLCPP_INFO_STREAM(
-      this->get_logger(),
-      "Last timestamp of left image: " << std::to_string(lastTimeStampLeft));
+      "Number of TrackStereo calls: " << std::to_string(track_stereo_count_));
 
   // Stop all threads
   if (m_SLAM) {
@@ -181,12 +166,8 @@ void StereoSlamNode::syncedCallback(
 
   double t = left_image_msg->header.stamp.sec +
              (left_image_msg->header.stamp.nanosec / 1e9);
-  if (firstTimeStampLeft == -1) firstTimeStampLeft = t;
-  lastTimeStampLeft = t;
   try {
     left_image = cv_bridge::toCvCopy(left_image_msg, "bgr8")->image;
-
-    tImLeft = t;
 
     timestamp = Utility::StampToSec(left_image_msg->header.stamp);
   } catch (cv_bridge::Exception &e) {
@@ -195,14 +176,13 @@ void StereoSlamNode::syncedCallback(
   }
 
   try {
-    contImageRight++;
     right_image = cv_bridge::toCvCopy(right_image_msg, "bgr8")->image;
-    tImRight = right_image_msg->header.stamp.sec +
-               (right_image_msg->header.stamp.nanosec / 1e9);
   } catch (cv_bridge::Exception &e) {
     RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
     return;
   }
+
+  image_count_++;
 
   // Initial time
   std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
@@ -276,35 +256,15 @@ void StereoSlamNode::syncedCallback(
           .count();
   m_SLAM->InsertTrackTime(tempo);
 
-#ifdef PUBLISH_POINT_CLOUD
-  // Point cloud pubblication
-  RCLCPP_INFO(this->get_logger(), "prima del mappiont to pointcloud");
-  depths.clear();
-  sensor_msgs::msg::PointCloud2 cloud = mappoint_to_pointcloud(
-      m_SLAM->GetTrackedMapPoints(), message.header.stamp, twc);
-  publisherPointCloud->publish(cloud);
-  RCLCPP_INFO(this->get_logger(), "dopo il mappiont to pointcloud");
-
-  // Tracked points showing is currently disabled...
-  std::vector<cv::KeyPoint> keypoints = m_SLAM->GetTrackedKeyPointsUn();
-  std::cout << "Size key point: " << keypoints.size() << std::endl;
-
-/*// Remove this code to enable it
-float minDepth = *std::min_element(depths.begin(), depths.end());
-float maxDepth = *std::max_element(depths.begin(), depths.end());
-
-for (size_t i = 0; i < keypoints.size(); ++i) {
-   cv::Point2f point = keypoints[i].pt;
-   float depth = depths[i];
-   cv::Scalar color = interpolateColor(depth, minDepth, maxDepth);
-   cv::circle(left_rectified_non_cropped, point, 3, color, cv::FILLED);
-}
-
-
-
-cv::imshow("Keypoints", left_rectified_non_cropped);
-cv::waitKey(1);*/
-#endif
+  const bool publish_point_cloud_ = false;
+  if (publish_point_cloud_) {
+    RCLCPP_INFO(this->get_logger(), "prima del mappiont to pointcloud");
+    depths.clear();
+    sensor_msgs::msg::PointCloud2 cloud = mappoint_to_pointcloud(
+        m_SLAM->GetTrackedMapPoints(), message.header.stamp, twc);
+    publisherPointCloud->publish(cloud);
+    RCLCPP_INFO(this->get_logger(), "dopo il mappiont to pointcloud");
+  }
 }
 
 // Key point color interpolation
