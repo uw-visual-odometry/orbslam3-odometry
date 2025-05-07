@@ -57,7 +57,7 @@ add_executable(orbslam3_odometry
 )
 target_link_libraries(orbslam3_odometry
       ${OpenCV_LIBS})
-ament_target_dependencies(orbslam3_odometry 
+ament_target_dependencies(orbslam3_odometry
   tf2_geometry_msgs
   rclcpp sensor_msgs cv_bridge message_filters ORB_SLAM3 Pangolin nav_msgs yaml-cpp)
 
