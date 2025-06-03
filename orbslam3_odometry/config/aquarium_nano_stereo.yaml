@@ -54,28 +54,29 @@ Camera.fps: 10
 # Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
 Camera.RGB: 0
 
+# Start to change values from here------------------
 # Close/Far threshold. Baseline times.
-Stereo.ThDepth: 10.0
+Stereo.ThDepth: 5.0
 
 # ORB Extractor: Number of features per image
 ORBextractor.nFeatures: 4000
 
 #--------------------------------------------------------------------------------------------
-# The changing of the following parameters should not infect the resul too much
+# The changing of the following parameters should not infect the result too much
 #--------------------------------------------------------------------------------------------
 
 # ORB Extractor: Scale factor between levels in the scale pyramid
 ORBextractor.scaleFactor: 1.2
 
 # ORB Extractor: Number of levels in the scale pyramid
-ORBextractor.nLevels: 8
+ORBextractor.nLevels: 9
 
 # ORB Extractor: Fast threshold
 # Image is divided in a grid. At each cell FAST are extracted imposing a minimum response.
 # Firstly we impose iniThFAST. If no corners are detected we impose a lower value minThFAST
 # You can lower these values if your images have low contrast
-ORBextractor.iniThFAST: 5
-ORBextractor.minThFAST: 1
+ORBextractor.iniThFAST: 25
+ORBextractor.minThFAST: 10
 
 #--------------------------------------------------------------------------------------------
 # Viewer Parameters

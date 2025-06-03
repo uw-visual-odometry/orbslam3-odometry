@@ -22,6 +22,14 @@
 #include "sensor_msgs/msg/point_field.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include <pcl/conversions.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/PCLPointCloud2.h>
+#include <pcl/PCLPointField.h>
+#include "sensor_msgs/msg/range.hpp"
+#include <pcl_conversions/pcl_conversions.h>
+#include <std_msgs/msg/int32.hpp>
 
 using sensor_msgs::msg::CameraInfo;
 
@@ -69,6 +77,7 @@ class StereoSlamNode : public MainNode {
   cv::Rect cropping_rect;
   double image_gamma_;
 
+  int lost_count = 0;
   int image_count_, track_stereo_count_;
   double firstTimeStampLeft, lastTimeStampLeft;
   // Point cloud and Key points varables/methods
@@ -79,4 +88,22 @@ class StereoSlamNode : public MainNode {
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
       publisherPointCloud;
   cv::Scalar interpolateColor(float value, float minDepth, float maxDepth);
+
+  // Depth declarations
+  double depth;
+  rclcpp::Publisher<sensor_msgs::msg::Range>::SharedPtr publisherDepth;
+  sensor_msgs::msg::Range pointcloud_to_depth(sensor_msgs::msg::PointCloud2 cloud);
+//   sensor_msgs::msg::Range pointcloud_to_depth_old(
+//       sensor_msgs::msg::PointCloud2 cloud);
+
+  // Compute image entropy
+  double computeEntropy(const cv::Mat& img_gray);
+
+  // Adaptive sharpening method
+  cv::Mat sharpen_block(const cv::Mat& input_image);
+
+  cv::Mat process_image_entropy_sharpen(const cv::Mat& image, int block_size, double entropy_threshold , double delta );
+
+  // 添加一个新的发布者用于valid_points
+  rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr publisherValidPoints;
 };

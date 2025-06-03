@@ -35,6 +35,7 @@ set(AMENT_DEPENDENCIES
     tf2_geometry_msgs
     tf2_ros
     yaml-cpp
+    pcl_conversions
 )
 
 foreach(Dependency IN ITEMS ${AMENT_DEPENDENCIES})
@@ -42,13 +43,18 @@ foreach(Dependency IN ITEMS ${AMENT_DEPENDENCIES})
 endforeach()
 
 find_package(OpenCV REQUIRED COMPONENTS highgui)
+find_package(PCL 1.3 REQUIRED)
 
 include_directories(
   include
   ${ORB_SLAM3_ROOT_DIR}/include
   ${ORB_SLAM3_ROOT_DIR}/include/CameraModels
   ${ORB_SLAM3_ROOT_DIR}/Thirdparty/Sophus
+  ${PCL_INCLUDE_DIRS}
 )
+
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
 
 # orbslam3_stereo
 #
@@ -60,7 +66,8 @@ add_executable(orbslam3_stereo
 ament_target_dependencies(orbslam3_stereo
   ${AMENT_DEPENDENCIES} )
 target_link_libraries(orbslam3_stereo
-  ${OpenCV_LIBRARIES})
+  ${OpenCV_LIBRARIES}
+  ${PCL_LIBRARIES})
 
 
 # orbslam3_mono
@@ -72,7 +79,8 @@ add_executable(orbslam3_mono
 ament_target_dependencies(orbslam3_mono
   ${AMENT_DEPENDENCIES} )
 target_link_libraries(orbslam3_mono
-  ${OpenCV_LIBRARIES})
+  ${OpenCV_LIBRARIES}
+  ${PCL_LIBRARIES})
 
 # orbslam3_check_stereo
 #
@@ -83,7 +91,8 @@ add_executable(orbslam3_check_stereo
 ament_target_dependencies(orbslam3_check_stereo
   ${AMENT_DEPENDENCIES} )
 target_link_libraries(orbslam3_check_stereo
-  ${OpenCV_LIBRARIES})
+  ${OpenCV_LIBRARIES}
+  ${PCL_LIBRARIES})
 
 #
 # Install targets

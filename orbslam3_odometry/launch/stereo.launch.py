@@ -27,8 +27,8 @@ def generate_launch_description():
             name="left_rectify_node",
             executable="rectify_node",
             remappings=[
-                ("image", "/left/image_raw"),
-                ("camera_info", "/left/camera_info"),
+                ("image", "/right/image_raw"),
+                ("camera_info", "/right/camera_info"),
                 ("image_rect", "/left/image_rect"),
             ],
         ),
@@ -37,8 +37,8 @@ def generate_launch_description():
             name="right_rectify_node",
             executable="rectify_node",
             remappings=[
-                ("image", "/right/image_raw"),
-                ("camera_info", "/right/camera_info"),
+                ("image", "/left/image_raw"),
+                ("camera_info", "/left/camera_info"),
                 ("image_rect", "/right/image_rect"),
             ],
         ),
